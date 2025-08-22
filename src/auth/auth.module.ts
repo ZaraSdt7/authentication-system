@@ -1,15 +1,16 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
-import { AuthService } from './auth.service';
-import { AuthController } from './auth.controller';
-import { UserEntity } from '../users/entities/user.entity';
-import { OtpModule } from '../otp/otp.module';
+import { AuthService } from './service/auth.service';
+
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { RefreshTokenStrategy } from './strategies/refresh.strategy';
 
 import { RefreshTokenEntity } from './entity/refresh-token.entity';
 import { DatabaseConfig } from '../database/database.config.service';
+import { UserEntity } from '../users/entity/user.entity';
+import { AuthController } from './controller/auth.controller';
+import { OtpModule } from '../otp/otp.module';
 
 @Module({
   imports: [
