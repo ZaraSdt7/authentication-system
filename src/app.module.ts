@@ -12,6 +12,7 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/user.module';
 import { RolesModule } from './roles/role.module';
 import { OtpModule } from './otp/otp.module';
+import { SessionsModule } from './sessions/session.module';
 
 
 
@@ -28,6 +29,7 @@ import { OtpModule } from './otp/otp.module';
     UsersModule,
     OtpModule,
     RolesModule,
+    SessionsModule
   ],
   providers: [
     // Global Exception Handler

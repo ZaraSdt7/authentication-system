@@ -7,54 +7,65 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { randomBytes, createHash } from 'crypto';
 import { JwtService } from '@nestjs/jwt';
-
 import { RequestOtpDto } from '../dto/request-otp.dto';
 import { VerifyOtpDto } from '../dto/verify-otp.dto';
 import { RefreshTokenDto } from '../dto/refresh-token.dto';
 import { DatabaseConfig } from '../../database/database.config.service';
-import { RefreshTokenEntity } from '../entity/refresh-token.entity';
 import { OtpService } from '../../otp/service/otp.service';
 import { UsersService } from '../../users/service/user.service';
 import { JwtPayload } from '../strategies/jwt-payload.interface';
 import { UserEntity } from '../../users/entity/user.entity';
+import { SessionsService } from '../../sessions/service/session.service';
+
 
 
 @Injectable()
 export class AuthService {
   constructor(
-    @InjectRepository(UserEntity) private readonly users: Repository<UserEntity>,
-    @InjectRepository(RefreshTokenEntity) private readonly refreshRepo: Repository<RefreshTokenEntity>,
+    @InjectRepository(UserEntity) private readonly usersRepo: Repository<UserEntity>,
     private readonly otpService: OtpService,
     private readonly jwtService: JwtService,
     private readonly config: DatabaseConfig,
     private readonly usersService: UsersService,
-  ) { }
+    private readonly sessionsService: SessionsService,
+  ) {}
 
-  async validateOtp(dto: VerifyOtpDto, ip: string) {
+  
+  async requestOtp(dto: RequestOtpDto, ip?: string) {
+    try {
+      await this.otpService.generateOtp(dto.phoneNumber, ip ?? '');
+
+      return { message: 'If eligible, OTP will be sent' };
+    } catch (error) {
+      if (
+        error instanceof ForbiddenException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Failed to request OTP');
+    }
+  }
+
+
+  async validateOtp(dto: VerifyOtpDto, ip?: string, userAgent?: string) {
     try {
       const isValid = await this.otpService.verifyOtp(dto.phoneNumber, dto.code);
       if (!isValid) {
         throw new UnauthorizedException('Invalid or expired OTP');
       }
 
-      // Check for user existence
-      let user = await this.usersService.getUserByPhone(dto.phoneNumber).catch(() => null);
+
+      let user = await this.usersService
+        .getUserByPhone(dto.phoneNumber)
+        .catch(() => null);
 
       if (!user) {
         user = await this.usersService.createUser({ phoneNumber: dto.phoneNumber });
       }
 
-      const payload: JwtPayload = { sub: user.id, phoneNumber: user.phoneNumber };
-      const accessToken = this.jwtService.sign(payload, { expiresIn: '15m' });
-      const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
-
-      return {
-        user,
-        accessToken,
-        refreshToken,
-      };
+      return await this.issueTokens(user, ip, userAgent);
     } catch (error) {
       if (
         error instanceof UnauthorizedException ||
@@ -67,35 +78,68 @@ export class AuthService {
     }
   }
 
-  async requestOtp(dto: RequestOtpDto, ip?: string) {
+
+  async verifyOtp(dto: VerifyOtpDto, ip?: string, userAgent?: string) {
+    return this.validateOtp(dto, ip, userAgent);
+  }
+
+
+  async refreshTokens(dto: RefreshTokenDto, ip?: string, userAgent?: string) {
     try {
-      await this.otpService.generateOtp(dto.phoneNumber, ip ?? '');
-      return { message: 'If eligible, OTP will be sent' };
+   
+      const payload = await this.jwtService.verifyAsync<JwtPayload>(dto.refreshToken, {
+        secret: this.config.get('JWT_REFRESH_SECRET'),
+      });
+      const userId = payload.sub;
+      await this.sessionsService.validateRefreshToken(userId, dto.refreshToken);
+
+      const newPayload: JwtPayload = {
+        sub: userId,
+        phoneNumber: payload.phoneNumber,
+      };
+
+      const accessToken = await this.jwtService.signAsync(newPayload, {
+        secret: this.config.get('JWT_SECRET'),
+        expiresIn: this.config.get('JWT_EXPIRES_IN') || '15m',
+      });
+
+      const newRefreshToken = await this.jwtService.signAsync(newPayload, {
+        secret: this.config.get('JWT_REFRESH_SECRET'),
+        expiresIn: this.config.get('JWT_REFRESH_EXPIRES_IN') || '7d',
+      });
+
+      const refreshTtlMs = this.parseTtl(this.config.get('JWT_REFRESH_EXPIRES_IN') || '7d');
+
+      await this.sessionsService.rotateSession(
+        userId,
+        dto.refreshToken,
+        newRefreshToken,
+        refreshTtlMs,
+        ip,
+        userAgent,
+      );
+
+      return {
+        tokenType: 'Bearer',
+        accessToken,
+        refreshToken: newRefreshToken,
+        expiresIn: this.config.get('JWT_EXPIRES_IN') || '15m',
+      };
     } catch (error) {
-      throw new InternalServerErrorException('Failed to request OTP');
+      throw new UnauthorizedException('Invalid refresh token');
     }
   }
 
-  async verifyOtp(dto: VerifyOtpDto, ip?: string, result?: string) {
-    try {
-      const valid = await this.otpService.verifyOtp(dto.phoneNumber, dto.code);
-      if (!valid) throw new UnauthorizedException('Invalid or expired OTP');
-
-      let user = await this.users.findOne({ where: { phoneNumber: dto.phoneNumber } });
-      if (!user) {
-        user = this.users.create({ phoneNumber: dto.phoneNumber });
-        user = await this.users.save(user);
-      }
-
-      return await this.issueTokens(user, ip, result);
-    } catch (error) {
-      throw new InternalServerErrorException('Failed to verify OTP');
-    }
+  async logout(userId: string) {
+    await this.sessionsService.revokeAllUserSessions(userId);
+    return { message: 'Logged out' };
   }
 
-  private async issueTokens(user: UserEntity, ip?: string, result?: string) {
-    const jti = randomBytes(16).toString('hex');
-    const payload = { sub: user.id, phone: user.phoneNumber, jti };
+  private async issueTokens(user: UserEntity, ip?: string, userAgent?: string) {
+    const payload: JwtPayload = {
+      sub: user.id,
+      phoneNumber: user.phoneNumber,
+    };
 
     const accessToken = await this.jwtService.signAsync(payload, {
       secret: this.config.get('JWT_SECRET'),
@@ -107,13 +151,22 @@ export class AuthService {
       expiresIn: this.config.get('JWT_REFRESH_EXPIRES_IN') || '7d',
     });
 
-    const hashed = createHash('sha256').update(refreshToken).digest('hex');
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-
-    const entity = this.refreshRepo.create({ user, hashedToken: hashed, expiresAt, ip, userAgent: result });
-    await this.refreshRepo.save(entity);
+    const refreshTtlMs = this.parseTtl(this.config.get('JWT_REFRESH_EXPIRES_IN') || '7d');
+    await this.sessionsService.createSession(
+      user.id,
+      refreshToken,
+      ip,
+      userAgent,
+      refreshTtlMs,
+    );
 
     return {
+      user: {
+        id: user.id,
+        phoneNumber: user.phoneNumber,
+        roles: user.roles,
+        isActive: user.isActive,
+      },
       tokenType: 'Bearer',
       accessToken,
       refreshToken,
@@ -121,32 +174,17 @@ export class AuthService {
     };
   }
 
-  async refreshTokens(dto: RefreshTokenDto, ip?: string, result?: string) {
-    try {
-      const payload = await this.jwtService.verifyAsync(dto.refreshToken, {
-        secret: this.config.get('JWT_REFRESH_SECRET'),
-      });
-
-      const hashed = createHash('sha256').update(dto.refreshToken).digest('hex');
-      const stored = await this.refreshRepo.findOne({
-        where: { hashedToken: hashed },
-        relations: ['user'],
-      });
-
-      if (!stored || stored.expiresAt < new Date()) {
-        throw new ForbiddenException('Refresh token expired or invalid');
-      }
-
-      await this.refreshRepo.delete(stored.id);
-
-      return await this.issueTokens(stored.user, ip, result);
-    } catch {
-      throw new UnauthorizedException('Invalid refresh token');
+  private parseTtl(ttl: string): number {
+    const match = /^(\d+)([smhd])$/.exec(ttl);
+    if (!match) return 0;
+    const value = parseInt(match[1], 10);
+    const unit = match[2];
+    switch (unit) {
+      case 's': return value * 1000;
+      case 'm': return value * 60 * 1000;
+      case 'h': return value * 60 * 60 * 1000;
+      case 'd': return value * 24 * 60 * 60 * 1000;
+      default: return 0;
     }
-  }
-
-  async logout(userId: number) {
-    await this.refreshRepo.delete({ user: { id: userId } });
-    return { message: 'Logged out' };
   }
 }

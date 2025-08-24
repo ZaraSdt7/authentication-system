@@ -17,5 +17,12 @@
     "noImplicitAny": false,
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false
-  }
+  },
+  "paths": {
+    "@auth/*": ["src/auth/*"],
+    "@users/*": ["src/users/*"],
+    "@otp/*": ["src/otp/*"],
+    "@sessions/*": ["src/sessions/*"],
+    "@database/*": ["src/database/*"]
+  },
 }
