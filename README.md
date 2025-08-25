@@ -1,6 +1,6 @@
 # NestJS Authentication System (OTP + JWT + Refresh Tokens + Session Management)
 
-## Overview
+# Overview
 
 This project is a **secure authentication system** built with **NestJS** and **MySQL**, featuring:  
 
@@ -15,7 +15,7 @@ This project is a **secure authentication system** built with **NestJS** and **M
 
 ---
 
-## Tech Stack
+# Tech Stack
 
 - **Backend:** NestJS  
 - **Database:** MySQL  
@@ -26,7 +26,7 @@ This project is a **secure authentication system** built with **NestJS** and **M
 
 ---
 
-## Project Structure
+# Project Structure
 
 ```text
 src/
@@ -66,4 +66,5 @@ src/
     ├── database.config.service.ts
     └── migrations/
     ```
----    
+
+
