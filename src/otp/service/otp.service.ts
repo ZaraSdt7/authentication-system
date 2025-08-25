@@ -1,7 +1,8 @@
 import { Injectable, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, MoreThan } from 'typeorm';
-import * as bcrypt from 'bcryptjs';
+// Using crypto module instead of bcryptjs
+import * as crypto from 'crypto';
 import { OtpEntity } from '../entity/otp.entity';
 
 @Injectable()
@@ -40,7 +41,11 @@ export class OtpService {
 
   
     const code = (Math.floor(100000 + Math.random() * 900000)).toString();
-    const hashedCode = await bcrypt.hash(code, 10);
+    // Generate a random salt
+    const salt = crypto.randomBytes(16).toString('hex');
+    // Hash the code with the salt using SHA-256
+    const hash = crypto.createHash('sha256').update(code + salt).digest('hex');
+    const hashedCode = `${salt}:${hash}`;
 
     const expiresAt = new Date(now.getTime() + this.OTP_EXPIRATION_MS);
 
@@ -66,7 +71,12 @@ export class OtpService {
     if (!otp) throw new BadRequestException('OTP not found');
     if (otp.expiresAt < new Date()) throw new ForbiddenException('OTP expired');
 
-    const isValid = await bcrypt.compare(code, otp.code);
+    // Split the stored hash into salt and hash components
+    const [salt, storedHash] = otp.code.split(':');
+    // Hash the provided code with the same salt
+    const hash = crypto.createHash('sha256').update(code + salt).digest('hex');
+    // Compare the hashes
+    const isValid = storedHash === hash;
     if (!isValid) throw new ForbiddenException('Invalid OTP');
 
     otp.used = true;

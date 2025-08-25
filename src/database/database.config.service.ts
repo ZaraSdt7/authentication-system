@@ -17,8 +17,9 @@ export class DatabaseConfig
             port:Number(this.get('DB_PORT')),
             username:this.get('DB_USER'),
             password:this.get('DB_PASS'),
+            database:this.get('DB_NAME'),
             autoLoadEntities: true,
-            synchronize: true,
+            synchronize: false,
         }
       }
       getJwtConfig() {

@@ -11,14 +11,16 @@ import { DatabaseConfig } from '../database/database.config.service';
 import { UserEntity } from '../users/entity/user.entity';
 import { AuthController } from './controller/auth.controller';
 import { OtpModule } from '../otp/otp.module';
-import { SessionsModule } from 'src/sessions/session.module';
+import { SessionsModule } from '../sessions/session.module';
+import { UsersModule } from '../users/user.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([UserEntity, RefreshTokenEntity]),
     JwtModule.register({}),
     OtpModule,
-     SessionsModule,
+    SessionsModule,
+    UsersModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, RefreshTokenStrategy, DatabaseConfig],

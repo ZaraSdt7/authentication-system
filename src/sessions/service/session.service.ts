@@ -6,14 +6,15 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, LessThan } from 'typeorm';
-import * as bcrypt from 'bcryptjs';
+// Using crypto module instead of bcryptjs
+import * as crypto from 'crypto';
 import { v4 as uuid } from 'uuid';
 import { SessionEntity } from '../entitiy/session.entity';
 
 
 @Injectable()
 export class SessionsService {
-  private readonly BCRYPT_ROUNDS = 12;
+  private readonly SALT_LENGTH = 16; // For crypto salt length
   private readonly DEFAULT_MAX_SESSIONS_PER_USER = 5;
 
   constructor(
@@ -39,7 +40,11 @@ export class SessionsService {
     tokenFamilyId?: string,
   ): Promise<SessionEntity> {
     try {
-      const refreshTokenHash = await bcrypt.hash(refreshTokenRaw, this.BCRYPT_ROUNDS);
+      // Generate a random salt
+      const salt = crypto.randomBytes(this.SALT_LENGTH).toString('hex');
+      // Hash the refresh token with the salt using SHA-256
+      const hash = crypto.createHash('sha256').update(refreshTokenRaw + salt).digest('hex');
+      const refreshTokenHash = `${salt}:${hash}`;
 
       const session = this.sessionRepo.create({
         userId,
@@ -78,7 +83,12 @@ export class SessionsService {
     // Compare the presented token with each session's token
     let matched: SessionEntity | null = null;
     for (const result of sessions) {
-      const ok = await bcrypt.compare(presentedRefreshToken, result.refreshTokenHash);
+      // Split the stored hash into salt and hash components
+      const [salt, storedHash] = result.refreshTokenHash.split(':');
+      // Hash the presented token with the same salt
+      const hash = crypto.createHash('sha256').update(presentedRefreshToken + salt).digest('hex');
+      // Compare the hashes
+      const ok = storedHash === hash;
       if (ok) {
         matched = result;
         break;
@@ -121,7 +131,11 @@ export class SessionsService {
     const session = await this.validateRefreshToken(userId, oldRefreshToken);
 
     // Generate a new hash
-    const newHash = await bcrypt.hash(newRefreshToken, this.BCRYPT_ROUNDS);
+    // Generate a random salt
+    const salt = crypto.randomBytes(this.SALT_LENGTH).toString('hex');
+    // Hash the refresh token with the salt using SHA-256
+    const hash = crypto.createHash('sha256').update(newRefreshToken + salt).digest('hex');
+    const newHash = `${salt}:${hash}`;
 
     // Update the session
     session.refreshTokenHash = newHash;
