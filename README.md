@@ -17,12 +17,12 @@ This project is a **secure authentication system** built with **NestJS** and **M
 
 # Tech Stack
 
-- **Backend:** NestJS  
-- **Database:** MySQL  
-- **ORM:** TypeORM  
-- **Authentication:** OTP, JWT, Refresh Tokens  
-- **Security:** Guards, Rate-limiting, Validation Pipes, Interceptors, Exception Filters  
-- **Environment Management:** dotenv  
+- Backend: NestJS  
+- Database: MySQL  
+- ORM: TypeORM  
+- Authentication: OTP, JWT, Refresh Tokens  
+- Security: Guards, Rate-limiting, Validation Pipes, Interceptors, Exception Filters  
+- Environment Management: dotenv  
 
 ---
 
@@ -68,3 +68,30 @@ src/
     ```
 
 
+# Environment Variables (.env)
+
+```dotenv
+# Database
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=root
+DB_PASS=
+DB_NAME=auth_sysDB
+
+# JWT
+JWT_SECRET=your_secure_jwt_secret
+JWT_EXPIRES_IN=15m
+JWT_REFRESH_SECRET=your_secure_refresh_secret
+JWT_REFRESH_EXPIRES_IN=7d
+
+# OTP
+OTP_EXPIRY=120
+OTP_LENGTH=6
+
+# Rate Limit
+RATE_LIMIT_MAX=5
+RATE_LIMIT_WINDOW=60000
+
+# App
+APP_PORT=3000
+NODE_ENV=development
