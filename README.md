@@ -28,7 +28,6 @@ This project is a **secure authentication system** built with **NestJS** and **M
 
 # Project Structure
 
-```text
 src/
 ├── app.module.ts
 ├── main.ts
@@ -66,7 +65,7 @@ src/
     ├── database.config.service.ts
     └── migrations/
     ```
-
+---
 
 # Environment Variables (.env)
 
@@ -95,3 +94,4 @@ RATE_LIMIT_WINDOW=60000
 # App
 APP_PORT=3000
 NODE_ENV=development
+```
