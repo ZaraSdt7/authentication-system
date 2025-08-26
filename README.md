@@ -114,76 +114,75 @@ npm run start:dev
 ```
 
 # Authentication Flow
+Request OTP
 
-- Request OTP
+Endpoint: POST /auth/request-otp
 
-- Endpoint: POST /auth/request-otp
+User sends their phone number.
 
-- User sends their phone number.
+System generates a secure OTP.
 
-- System generates a secure OTP.
+Verify OTP
 
-- Verify OTP
+Endpoint: POST /auth/verify-otp
 
-- Endpoint: POST /auth/verify-otp
+OTP is validated.
 
-- OTP is validated.
+If successful:
 
-- If successful:
+Issues Access Token + Refresh Token.
 
-- Issues Access Token + Refresh Token.
+If user does not exist → creates a new user automatically.
 
-- If user does not exist → creates a new user automatically.
+Creates a session record in sessions table:
 
-- Creates a session record in sessions table:
+userId
 
-- userId
+refreshTokenHash
 
-- refreshTokenHash
+ip
 
-- ip
+userAgent
 
-- userAgent
+expiresAt
 
-- expiresAt
+Refresh Token
 
-- Refresh Token
+Endpoint: POST /auth/refresh
 
-- Endpoint: POST /auth/refresh
+User obtains a new Access Token using Refresh Token.
 
-- User obtains a new Access Token using Refresh Token.
+Implements Session Rotation → invalidates old refresh tokens in sessions table.
 
-- Implements Session Rotation → invalidates old refresh tokens in sessions table.
+Logout
 
-- Logout
+Endpoint: POST /auth/logout
 
-- Endpoint: POST /auth/logout
+Invalidates all refresh tokens for the user.
 
-- Invalidates all refresh tokens for the user.
+Ends the session.
 
-- Ends the session.
+Database & Migrations
 
-- Database & Migrations
+users → user information (phoneNumber, profile, etc.)
 
-- users → user information (phoneNumber, profile, etc.)
+otp_codes → OTP records, expiration, IP, usage status
 
-- otp_codes → OTP records, expiration, IP, usage status
+refresh_tokens → hashed refresh tokens, IP, user-agent
 
-- refresh_tokens → hashed refresh tokens, IP, user-agent
+roles → roles for RBAC
 
-- roles → roles for RBAC
+sessions → active sessions with:
 
-- sessions → active sessions with:
+userId
 
-- userId
+ip
 
-- ip
+userAgent
 
-- userAgent
+refreshTokenHash
 
-- refreshTokenHash
-
-- expiresAt
+expiresAt
 
 # 💡 Note: Database design is informed by reverse engineering to model OTP flows, session handling, and token rotation properly.
 
@@ -212,6 +211,6 @@ Fork the repository
 git checkout -b feature/xyz
 ```
 
-- Make your changes
+Make your changes
 
-- Submit a Pull Request
+Submit a Pull Request
