@@ -59,7 +59,7 @@ async function bootstrap() {
   await app.listen(port);
 
   console.log(`Server running on http://localhost:${port}`);
-  console.log(`Swagger docs available at http://localhost:${port}/api/docs`);
+  console.log(`Swagger docs available at http://localhost:${port}/api`);
 }
 
 bootstrap();

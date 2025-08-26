@@ -65,8 +65,8 @@ src/
     ├── database.module.ts
     ├── database.config.service.ts
     └── migrations/
-    ```
-
+```
+---
 
 # Environment Variables (.env)
 
@@ -95,3 +95,123 @@ RATE_LIMIT_WINDOW=60000
 # App
 APP_PORT=3000
 NODE_ENV=development
+```
+
+#Installation
+```bash
+# Clone repository
+git clone <repo-url>
+cd authentication-system
+
+# Install dependencies
+npm install
+
+# Start MySQL (Docker example)
+docker run --name auth-mysql -e MYSQL_ROOT_PASSWORD= -p 3306:3306 -d mysql:8
+
+# Run the application
+npm run start:dev
+```
+
+# Authentication Flow
+
+- Request OTP
+
+- Endpoint: POST /auth/request-otp
+
+- User sends their phone number.
+
+- System generates a secure OTP.
+
+- Verify OTP
+
+- Endpoint: POST /auth/verify-otp
+
+- OTP is validated.
+
+- If successful:
+
+- Issues Access Token + Refresh Token.
+
+- If user does not exist → creates a new user automatically.
+
+- Creates a session record in sessions table:
+
+- userId
+
+- refreshTokenHash
+
+- ip
+
+- userAgent
+
+- expiresAt
+
+- Refresh Token
+
+- Endpoint: POST /auth/refresh
+
+- User obtains a new Access Token using Refresh Token.
+
+- Implements Session Rotation → invalidates old refresh tokens in sessions table.
+
+- Logout
+
+- Endpoint: POST /auth/logout
+
+- Invalidates all refresh tokens for the user.
+
+- Ends the session.
+
+- Database & Migrations
+
+- users → user information (phoneNumber, profile, etc.)
+
+- otp_codes → OTP records, expiration, IP, usage status
+
+- refresh_tokens → hashed refresh tokens, IP, user-agent
+
+- roles → roles for RBAC
+
+- sessions → active sessions with:
+
+- userId
+
+- ip
+
+- userAgent
+
+- refreshTokenHash
+
+- expiresAt
+
+# 💡 Note: Database design is informed by reverse engineering to model OTP flows, session handling, and token rotation properly.
+
+Security Features
+
+OTPs are hashed using bcrypt.
+
+Rate limiting prevents brute-force attacks.
+
+Short-lived JWT access tokens with refresh token rotation.
+
+Session table ensures active sessions can be tracked and revoked.
+
+Role-Based Access Control (RBAC) using Guards.
+
+Centralized error handling with Exception Filters.
+
+Input validation with Pipes.
+
+Contributing
+
+Fork the repository
+
+# Create a new branch
+```bash
+git checkout -b feature/xyz
+```
+
+- Make your changes
+
+- Submit a Pull Request
