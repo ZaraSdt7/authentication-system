@@ -81,14 +81,14 @@ describe('AuthService', () => {
   });
 
   describe('requestOtp', () => {
-    it('✅ should generate OTP successfully', async () => {
+    it(' should generate OTP successfully', async () => {
       otpService.generateOtp.mockResolvedValue('123456');
       const result = await authService.requestOtp({ phoneNumber: '09123456789', captchaToken: 'validCaptchaToken' });
       expect(result).toEqual({ message: 'If eligible, OTP will be sent' });
       expect(otpService.generateOtp).toHaveBeenCalledWith('09123456789', '');
     });
 
-    it('❌ should throw ForbiddenException if too many requests', async () => {
+    it(' should throw ForbiddenException if too many requests', async () => {
       otpService.generateOtp.mockRejectedValue(new ForbiddenException());
       await expect(
         authService.requestOtp({ phoneNumber: '09123456789', captchaToken: 'validCaptchaToken' }),
@@ -97,7 +97,7 @@ describe('AuthService', () => {
   });
 
   describe('verifyOtp', () => {
-    it('✅ should validate OTP and create new user if not exists', async () => {
+    it(' should validate OTP and create new user if not exists', async () => {
       otpService.verifyOtp.mockResolvedValue(true);
       usersService.getUserByPhone.mockRejectedValue(new Error('User not found'));
       usersService.createUser.mockResolvedValue({ id: '1', phoneNumber: '09123456789', roles: [], isActive: true } as any);
@@ -110,14 +110,14 @@ describe('AuthService', () => {
       expect(sessionsService.createSession).toHaveBeenCalled();
     });
 
-    it('❌ should throw UnauthorizedException if OTP invalid', async () => {
+    it(' should throw UnauthorizedException if OTP invalid', async () => {
       otpService.verifyOtp.mockResolvedValue(false);
       await expect(authService.verifyOtp({ phoneNumber: '09123456789', code: '111111' })).rejects.toThrow(UnauthorizedException);
     });
   });
 
   describe('refreshTokens', () => {
-    it('✅ should refresh tokens successfully', async () => {
+    it(' should refresh tokens successfully', async () => {
       jwtService.verifyAsync.mockResolvedValue({ sub: '1', phoneNumber: '09123456789' });
       sessionsService.validateRefreshToken.mockResolvedValue({ id: 'session-1', userId: '1', refreshTokenHash: 'valid.token' } as SessionEntity);
       jwtService.signAsync.mockResolvedValueOnce('newAccessToken').mockResolvedValueOnce('newRefreshToken');
@@ -129,14 +129,14 @@ describe('AuthService', () => {
       expect(sessionsService.rotateSession).toHaveBeenCalled();
     });
 
-    it('❌ should throw UnauthorizedException if refresh token invalid', async () => {
+    it(' should throw UnauthorizedException if refresh token invalid', async () => {
       jwtService.verifyAsync.mockRejectedValue(new Error('Invalid token'));
       await expect(authService.refreshTokens({ refreshToken: 'invalid.token' })).rejects.toThrow(UnauthorizedException);
     });
   });
 
   describe('logout', () => {
-    it('✅ should revoke all sessions', async () => {
+    it(' should revoke all sessions', async () => {
       await authService.logout('1');
       expect(sessionsService.revokeAllUserSessions).toHaveBeenCalledWith('1');
     });
