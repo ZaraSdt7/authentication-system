@@ -18,11 +18,11 @@
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false
   },
-  "paths": {
-    "@auth/*": ["src/auth/*"],
-    "@users/*": ["src/users/*"],
-    "@otp/*": ["src/otp/*"],
-    "@sessions/*": ["src/sessions/*"],
-    "@database/*": ["src/database/*"]
-  },
+  // "paths": {
+  //   "@auth/*": ["src/auth/*"],
+  //   "@users/*": ["src/users/*"],
+  //   "@otp/*": ["src/otp/*"],
+  //   "@sessions/*": ["src/sessions/*"],
+  //   "@database/*": ["src/database/*"]
+  // },
 }

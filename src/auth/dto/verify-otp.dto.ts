@@ -1,10 +1,13 @@
-import { IsPhoneNumber, IsString, Length } from 'class-validator';
+import { IsPhoneNumber, IsString, Length, IsNotEmpty, Matches } from 'class-validator';
+import { Phone } from '../../common/validator/phone';
 
 export class VerifyOtpDto {
-  @IsPhoneNumber('IR')
+  @Phone({ message: 'Phone number must start with 09 and be 11 digits long' })
   phoneNumber: string;
 
   @IsString()
-  @Length(4, 6) 
+  @IsNotEmpty()
+  @Length(6, 6, { message: 'OTP code must be exactly 6 digits' })
+  @Matches(/^\d{6}$/, { message: 'OTP code must contain only digits' })
   code: string;
 }

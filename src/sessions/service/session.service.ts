@@ -62,7 +62,7 @@ export class SessionsService {
       await this.enforceMaxSessions(userId, this.DEFAULT_MAX_SESSIONS_PER_USER);
 
       return await this.sessionRepo.save(session);
-    } catch (e) {
+    } catch (error) {
       throw new InternalServerErrorException('Failed to create session');
     }
   }
