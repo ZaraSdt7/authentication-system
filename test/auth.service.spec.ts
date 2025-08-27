@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
 import { Repository } from 'typeorm';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { UnauthorizedException, InternalServerErrorException, ForbiddenException } from '@nestjs/common';
+import { UnauthorizedException, ForbiddenException } from '@nestjs/common';
 import { AuthService } from '../src/auth/service/auth.service';
 import { OtpService } from '../src/otp/service/otp.service';
 import { UsersService } from '../src/users/service/user.service';

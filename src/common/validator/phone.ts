@@ -12,7 +12,7 @@ export function Phone(validationOptions?: ValidationOptions) {
       propertyName,
       options: validationOptions,
       validator: {
-        validate(value: any) {
+        validate(value: unknown) {
           if (typeof value !== 'string') return false;
           return /^09\d{9}$/.test(value); 
         },

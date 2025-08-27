@@ -1,7 +1,7 @@
 import { Controller, Get, Delete, Param, UseGuards, Req, ForbiddenException } from '@nestjs/common';
-import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
-import { RolesGuard, Roles } from 'src/roles/roleguard/role.guard';
 import { SessionsService } from '../service/session.service';
+import { Roles, RolesGuard } from '../../roles/roleguard/role.guard';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 
 
 @Controller('sessions')
