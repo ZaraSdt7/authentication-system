@@ -1,8 +1,8 @@
 import { Injectable, BadRequestException, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { UserEntity } from "src/users/entity/user.entity";
 import { Repository } from "typeorm";
 import { RoleEntity } from "../entity/role.entity";
+import { UserEntity } from '../../users/entity/user.entity';
 
 @Injectable()
 export class RolesService {
